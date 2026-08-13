@@ -89,4 +89,4 @@ jobs:
           advanced-security: false
           annotations: true
           min-severity: medium
-          version: v1.26.0
+          version: v1.29.0
