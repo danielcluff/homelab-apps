@@ -1,0 +1,20 @@
+namespace: public-sites
+
+imagePullSecrets:
+  - name: application-registry-pull
+
+defaults:
+  replicaCount: 2
+  minAvailable: 1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 250m
+      memory: 128Mi
+
+# Environment value files populate this map. An application must have an
+# immutable image digest and must be explicitly enabled before it renders.
+applications: {}
+

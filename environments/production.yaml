@@ -1,0 +1,26 @@
+applications:
+  elate-me:
+    enabled: false
+    domain: elate.me
+    image:
+      repository: images.elate.me/elate-me
+      digest: sha256:f98fa3197b5f31df8ded93d97ae62044fb8d0a8a22ac76de849b69904475b121
+    containerPort: 8080
+    healthPath: /
+    runAsUser: 1000
+    readOnlyRootFilesystem: false
+    autoscaling:
+      enabled: false
+
+  elate-biz:
+    enabled: false
+    domain: elate.biz
+    image:
+      repository: images.elate.me/elate-biz
+      digest: sha256:0334dd7e48a1792ae0a4e1494e0c5a31a14090f1eb050e0cfc54fe79c60a0955
+    containerPort: 8080
+    healthPath: /healthz
+    runAsUser: 101
+    readOnlyRootFilesystem: true
+    autoscaling:
+      enabled: false

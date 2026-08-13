@@ -1,0 +1,187 @@
+{{- $root := . -}}
+{{- range $name, $app := .Values.applications }}
+{{- if $app.enabled }}
+{{- $repository := required (printf "applications.%s.image.repository is required" $name) $app.image.repository }}
+{{- $digest := required (printf "applications.%s.image.digest is required" $name) $app.image.digest }}
+{{- if not (regexMatch "^sha256:[a-f0-9]{64}$" $digest) }}
+{{- fail (printf "applications.%s.image.digest must be an immutable sha256 digest" $name) }}
+{{- end }}
+{{- $port := ($app.containerPort | default 8080) }}
+{{- $healthPath := ($app.healthPath | default "/") }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $root.Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/part-of: homelab-apps
+spec:
+  {{- if not $app.autoscaling.enabled }}
+  replicas: {{ $app.replicaCount | default $root.Values.defaults.replicaCount }}
+  {{- end }}
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $name }}
+        app.kubernetes.io/part-of: homelab-apps
+      annotations:
+        homelab.elate.me/image: {{ printf "%s@%s" $repository $digest | quote }}
+    spec:
+      automountServiceAccountToken: false
+      {{- with $root.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: {{ $name }}
+      securityContext:
+        runAsNonRoot: true
+        {{- with $app.runAsUser }}
+        runAsUser: {{ . }}
+        runAsGroup: {{ . }}
+        {{- end }}
+        fsGroup: {{ $app.runAsUser | default 101 }}
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: application
+          image: {{ printf "%s@%s" $repository $digest | quote }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: {{ $port }}
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: {{ $healthPath }}
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: {{ $healthPath }}
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: {{ if hasKey $app "readOnlyRootFilesystem" }}{{ $app.readOnlyRootFilesystem }}{{ else }}true{{ end }}
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml ($app.resources | default $root.Values.defaults.resources) | nindent 12 }}
+          volumeMounts:
+            - name: cache
+              mountPath: /var/cache/nginx
+            - name: run
+              mountPath: /var/run
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: cache
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name }}
+  namespace: {{ $root.Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/part-of: homelab-apps
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: {{ $name }}
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $name }}
+  namespace: {{ $root.Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/part-of: homelab-apps
+spec:
+  minAvailable: {{ $app.minAvailable | default $root.Values.defaults.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $name }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $name }}-public
+  namespace: {{ $root.Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/part-of: homelab-apps
+spec:
+  ingressClassName: traefik-public
+  rules:
+    - host: {{ required (printf "applications.%s.domain is required" $name) $app.domain }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ $name }}
+                port:
+                  name: http
+{{- if $app.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $name }}
+  namespace: {{ $root.Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/part-of: homelab-apps
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ $name }}
+  minReplicas: {{ $app.autoscaling.minReplicas | default 2 }}
+  maxReplicas: {{ required (printf "applications.%s.autoscaling.maxReplicas is required" $name) $app.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ $app.autoscaling.targetCPUUtilizationPercentage | default 70 }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,17 @@
+applications:
+  validation-site:
+    enabled: true
+    domain: validation.example.com
+    image:
+      repository: images.example.com/validation-site
+      digest: sha256:1111111111111111111111111111111111111111111111111111111111111111
+    containerPort: 8080
+    healthPath: /healthz
+    runAsUser: 101
+    readOnlyRootFilesystem: true
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 4
+      targetCPUUtilizationPercentage: 70
+
