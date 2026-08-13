@@ -58,6 +58,25 @@ Pull requests and changes to `main` also run Kubernetes schema validation,
 Trivy configuration and secret scanning, and zizmor analysis of GitHub Actions.
 Dependabot proposes updates to SHA-pinned Actions dependencies each week.
 
+## Automated image promotion
+
+Private application repositories call the reusable `Promote image digest`
+workflow after publishing an image. The caller must pin this repository to an
+immutable commit SHA. The workflow uses a dedicated GitHub App installation
+token scoped only to this repository, updates the matching production digest,
+validates the chart, and opens or refreshes an automation pull request.
+
+The GitHub App requires only these repository permissions:
+
+- Contents: Read and write
+- Pull requests: Read and write
+
+Install it only on `danielcluff/homelab-apps`. Store its client ID as
+`HOMELAB_PROMOTER_CLIENT_ID` and its private key as
+`HOMELAB_PROMOTER_PRIVATE_KEY` in each private application repository (or as
+organization-level Actions configuration restricted to the selected
+repositories). Do not store either value in this public repository.
+
 ## Secrets
 
 This is a public repository. Commit only Secret references, never credentials,

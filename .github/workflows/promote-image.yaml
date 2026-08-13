@@ -1,0 +1,128 @@
+name: Promote image digest
+
+on:
+  workflow_call:
+    inputs:
+      application:
+        description: Application key in environments/production.yaml
+        required: true
+        type: string
+      digest:
+        description: Immutable OCI image digest
+        required: true
+        type: string
+      source-repository:
+        description: Repository that published the image
+        required: true
+        type: string
+      source-sha:
+        description: Source commit used to build the image
+        required: true
+        type: string
+      promoter-client-id:
+        description: Client ID of the repository-scoped promoter GitHub App
+        required: true
+        type: string
+    secrets:
+      promoter-private-key:
+        description: Private key of the repository-scoped promoter GitHub App
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    name: Open deployment pull request
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Create repository-scoped installation token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ inputs.promoter-client-id }}
+          private-key: ${{ secrets.promoter-private-key }}
+          owner: danielcluff
+          repositories: homelab-apps
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Check out GitOps repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: danielcluff/homelab-apps
+          ref: main
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+          path: homelab-apps
+          persist-credentials: false
+
+      - name: Update and validate deployment digest
+        id: update
+        working-directory: homelab-apps
+        env:
+          APPLICATION: ${{ inputs.application }}
+          DIGEST: ${{ inputs.digest }}
+        run: |
+          ./scripts/update-image-digest.rb "${APPLICATION}" "${DIGEST}"
+          ./scripts/validate.sh
+
+      - name: Commit, push, and create or update pull request
+        if: steps.update.outputs.changed == 'true'
+        working-directory: homelab-apps
+        env:
+          APPLICATION: ${{ inputs.application }}
+          DIGEST: ${{ inputs.digest }}
+          SOURCE_REPOSITORY: ${{ inputs.source-repository }}
+          SOURCE_SHA: ${{ inputs.source-sha }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+
+          branch="automation/promote-${APPLICATION}"
+          app_user_id="$(gh api "/users/${APP_SLUG}[bot]" --jq .id)"
+
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${app_user_id}+${APP_SLUG}[bot]@users.noreply.github.com"
+          git switch -C "${branch}"
+          git add environments/production.yaml
+          git commit -m "deploy(${APPLICATION}): promote ${SOURCE_SHA:0:12}"
+
+          gh auth setup-git
+          git fetch origin "refs/heads/${branch}:refs/remotes/origin/${branch}" || true
+          git push --force-with-lease origin "HEAD:refs/heads/${branch}"
+
+          title="deploy(${APPLICATION}): promote ${SOURCE_SHA:0:12}"
+          body="$(printf '%s\n' \
+            "Automated production image promotion." \
+            "" \
+            "- Application: \`${APPLICATION}\`" \
+            "- Source: \`${SOURCE_REPOSITORY}@${SOURCE_SHA}\`" \
+            "- Digest: \`${DIGEST}\`" \
+            "" \
+            "Merging this PR records the desired deployment state. Argo CD will reconcile it once application deployment is enabled.")"
+
+          pr_number="$(gh pr list \
+            --repo danielcluff/homelab-apps \
+            --base main \
+            --head "${branch}" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')"
+
+          if [[ -n "${pr_number}" ]]; then
+            gh pr edit "${pr_number}" \
+              --repo danielcluff/homelab-apps \
+              --title "${title}" \
+              --body "${body}"
+          else
+            gh pr create \
+              --repo danielcluff/homelab-apps \
+              --base main \
+              --head "${branch}" \
+              --title "${title}" \
+              --body "${body}"
+          fi
