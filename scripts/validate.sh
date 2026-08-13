@@ -17,6 +17,10 @@ fi
 grep -q 'image: "images.example.com/validation-site@sha256:' "${rendered}"
 grep -q 'ingressClassName: traefik-public' "${rendered}"
 grep -q 'type: ClusterIP' "${rendered}"
+# Keep the selector contract used by the public Cilium policies and by the
+# legacy Helm workloads that Argo CD adopts during migration.
+grep -q 'app.kubernetes.io/name: public-site' "${rendered}"
+grep -q 'app.kubernetes.io/instance: validation-site' "${rendered}"
 
 "${repo_dir}/tests/update-image-digest.sh"
 
