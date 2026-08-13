@@ -54,6 +54,13 @@ The validation chart exercises immutable digest enforcement, public Traefik
 Ingress, ClusterIP-only exposure, Pod Security settings, disruption protection,
 and optional horizontal autoscaling.
 
+Workloads retain the cluster's public-site identity labels:
+`app.kubernetes.io/name: public-site` and an
+`app.kubernetes.io/instance` matching the application key. These labels are a
+deployment contract: Cilium uses both to grant only the corresponding public
+Traefik route, and preserving them permits an in-place migration from the
+legacy Helm release without changing the Deployment's immutable selector.
+
 Pull requests and changes to `main` also run Kubernetes schema validation,
 Trivy configuration and secret scanning, and zizmor analysis of GitHub Actions.
 Dependabot proposes updates to SHA-pinned Actions dependencies each week.
