@@ -24,4 +24,3 @@ jobs:
 
       - name: Validate Helm release
         run: ./scripts/validate.sh
-

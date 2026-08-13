@@ -18,4 +18,6 @@ grep -q 'image: "images.example.com/validation-site@sha256:' "${rendered}"
 grep -q 'ingressClassName: traefik-public' "${rendered}"
 grep -q 'type: ClusterIP' "${rendered}"
 
+"${repo_dir}/tests/update-image-digest.sh"
+
 echo "Helm lint and render validation passed"
