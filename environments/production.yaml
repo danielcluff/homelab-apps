@@ -4,7 +4,7 @@ applications:
     domain: elate.me
     image:
       repository: images.elate.me/elate-me
-      digest: sha256:f98fa3197b5f31df8ded93d97ae62044fb8d0a8a22ac76de849b69904475b121
+      digest: sha256:1b57f712c45103771ea8527f83dc524a959c9cee128c65f619bd4cb9cd412308
     containerPort: 8080
     healthPath: /
     runAsUser: 1000
@@ -17,7 +17,7 @@ applications:
     domain: elate.biz
     image:
       repository: images.elate.me/elate-biz
-      digest: sha256:0334dd7e48a1792ae0a4e1494e0c5a31a14090f1eb050e0cfc54fe79c60a0955
+      digest: sha256:1afc7c6f448106c5bbecac561052cfa819d4fa0c596aaae8778f6a97534d4040
     containerPort: 8080
     healthPath: /healthz
     runAsUser: 101
