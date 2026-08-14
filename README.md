@@ -14,7 +14,10 @@ repository records the auditable deployment state that Argo CD will reconcile.
 
 This repository is linked to the cluster through an Argo CD `Application`, not
 as a Git submodule. The bootstrap resource and its restricted `AppProject` will
-live in the `homelab` repository.
+continue to live in the `homelab` repository.
+
+For the end-to-end onboarding procedure, including every external system, see
+[Add a public site to the deployment pipeline](docs/ADDING_A_PUBLIC_SITE.md).
 
 ## Release contract
 
@@ -32,11 +35,10 @@ branch may update production automatically. More complex products promote the
 same digest through development, staging, and production environment changes.
 Images are never rebuilt during promotion.
 
-## Current bootstrap state
+## Deployment prerequisites
 
-`elate.me` and `elate.biz` are declared in `environments/production.yaml` with
-tested bootstrap image digests, but remain disabled. Enabling either
-application requires all of the following:
+`elate.me` and `elate.biz` are managed by Argo CD. Adding another application
+requires all of the following:
 
 1. The authenticated private Distribution Registry v3 is available internally.
 2. The application image has been built, scanned, pushed, and recorded by digest.
