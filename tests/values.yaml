@@ -6,6 +6,7 @@ applications:
       repository: images.example.com/validation-site
       digest: sha256:1111111111111111111111111111111111111111111111111111111111111111
     containerPort: 8080
+    containerName: application
     healthPath: /healthz
     runAsUser: 101
     readOnlyRootFilesystem: true
@@ -14,4 +15,3 @@ applications:
       minReplicas: 2
       maxReplicas: 4
       targetCPUUtilizationPercentage: 70
-

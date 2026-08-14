@@ -8,6 +8,7 @@
 {{- end }}
 {{- $port := ($app.containerPort | default 8080) }}
 {{- $healthPath := ($app.healthPath | default "/") }}
+{{- $containerName := ($app.containerName | default "application") }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -66,7 +67,7 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: application
+        - name: {{ $containerName }}
           image: {{ printf "%s@%s" $repository $digest | quote }}
           imagePullPolicy: IfNotPresent
           ports:

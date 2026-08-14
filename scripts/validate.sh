@@ -21,6 +21,7 @@ grep -q 'type: ClusterIP' "${rendered}"
 # legacy Helm workloads that Argo CD adopts during migration.
 grep -q 'app.kubernetes.io/name: public-site' "${rendered}"
 grep -q 'app.kubernetes.io/instance: validation-site' "${rendered}"
+grep -q -- '- name: application' "${rendered}"
 
 "${repo_dir}/tests/update-image-digest.sh"
 

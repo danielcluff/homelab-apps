@@ -60,6 +60,9 @@ Workloads retain the cluster's public-site identity labels:
 deployment contract: Cilium uses both to grant only the corresponding public
 Traefik route, and preserving them permits an in-place migration from the
 legacy Helm release without changing the Deployment's immutable selector.
+The optional `containerName` value likewise preserves a legacy container's
+merge key during initial adoption; new applications use `application` by
+default.
 
 Pull requests and changes to `main` also run Kubernetes schema validation,
 Trivy configuration and secret scanning, and zizmor analysis of GitHub Actions.

@@ -6,6 +6,7 @@ applications:
       repository: images.elate.me/elate-me
       digest: sha256:1b57f712c45103771ea8527f83dc524a959c9cee128c65f619bd4cb9cd412308
     containerPort: 8080
+    containerName: nginx
     healthPath: /
     runAsUser: 1000
     readOnlyRootFilesystem: false
@@ -13,12 +14,13 @@ applications:
       enabled: false
 
   elate-biz:
-    enabled: false
+    enabled: true
     domain: elate.biz
     image:
       repository: images.elate.me/elate-biz
       digest: sha256:1afc7c6f448106c5bbecac561052cfa819d4fa0c596aaae8778f6a97534d4040
     containerPort: 8080
+    containerName: nginx
     healthPath: /healthz
     runAsUser: 101
     readOnlyRootFilesystem: true
