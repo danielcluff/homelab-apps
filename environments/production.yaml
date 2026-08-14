@@ -1,6 +1,6 @@
 applications:
   elate-me:
-    enabled: false
+    enabled: true
     domain: elate.me
     image:
       repository: images.elate.me/elate-me
