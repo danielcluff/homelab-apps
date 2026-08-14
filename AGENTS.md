@@ -32,7 +32,7 @@ Run the complete local validation before committing:
 ./scripts/validate.sh
 ```
 
-The production environment file intentionally contains disabled applications
-with empty digests until the private application registry and Argo CD bootstrap
-are ready.
-
+New production entries must remain disabled until their registry image, exact
+Cilium rules, Cloudflare route, and external repository settings are ready.
+Follow `docs/ADDING_A_PUBLIC_SITE.md` and use the repository-local
+`add-public-site` skill for complete onboarding.
