@@ -15,7 +15,11 @@ if grep -Eq 'image: .*:(latest|main)([[:space:]]|$)' "${rendered}"; then
 fi
 
 grep -q 'image: "images.example.com/validation-site@sha256:' "${rendered}"
-grep -q 'ingressClassName: traefik-public' "${rendered}"
+grep -q 'kubernetes.io/ingress.class: traefik-public' "${rendered}"
+if grep -q 'ingressClassName:' "${rendered}"; then
+  echo "public Ingress must not require cluster-scoped IngressClass lookup" >&2
+  exit 1
+fi
 grep -q 'type: ClusterIP' "${rendered}"
 # Keep the selector contract used by the public Cilium policies and by the
 # legacy Helm workloads that Argo CD adopts during migration.
