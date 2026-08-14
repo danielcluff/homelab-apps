@@ -54,6 +54,10 @@ The validation chart exercises immutable digest enforcement, public Traefik
 Ingress, ClusterIP-only exposure, Pod Security settings, disruption protection,
 and optional horizontal autoscaling.
 
+Public Ingresses use the `kubernetes.io/ingress.class: traefik-public`
+annotation. The isolated controller deliberately disables cluster-scoped
+resource discovery, so `spec.ingressClassName` must not be used here.
+
 Workloads retain the cluster's public-site identity labels:
 `app.kubernetes.io/name: public-site` and an
 `app.kubernetes.io/instance` matching the application key. These labels are a

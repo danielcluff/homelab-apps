@@ -151,12 +151,15 @@ kind: Ingress
 metadata:
   name: {{ $name }}-public
   namespace: {{ $root.Values.namespace }}
+  annotations:
+    # The isolated controller disables cluster-scoped discovery, including
+    # IngressClass lookup, and therefore selects routes by this annotation.
+    kubernetes.io/ingress.class: traefik-public
   labels:
     app.kubernetes.io/name: public-site
     app.kubernetes.io/instance: {{ $name }}
     app.kubernetes.io/part-of: homelab-apps
 spec:
-  ingressClassName: traefik-public
   rules:
     - host: {{ required (printf "applications.%s.domain is required" $name) $app.domain }}
       http:
