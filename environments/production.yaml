@@ -18,7 +18,7 @@ applications:
     domain: elate.biz
     image:
       repository: images.elate.me/elate-biz
-      digest: sha256:1afc7c6f448106c5bbecac561052cfa819d4fa0c596aaae8778f6a97534d4040
+      digest: sha256:1d0c055f68a823fc21773fe22649a467efe6eb80a70ea992366f344d1e378ee5
     containerPort: 8080
     containerName: nginx
     healthPath: /healthz
